@@ -39,14 +39,16 @@ if __name__ == '__main__':
 
     # 3: Construct the database
     database = []
-    for audiofile in audiofiles:
-
+    for audiofile in audiofiles[:1]:
+    
         fs, s = read(folder + '/' + audiofile)
         print('Song: ' + audiofile[:-4])
         print('Sampling frequency: ' + str(fs))
         encoder.process(fs, s)
-        database.append({'song': audiofile[:-4],
-          'hashcodes': encoder.hashes})
+        print(len(encoder.t))
+        encoder.display_spectrogram(display_anchors=True)
+        #database.append({'song': audiofile[:-4],
+        #  'hashcodes': encoder.hashes})
 
     # 4: Save the database
     with open('songs.pickle', 'wb') as handle:

@@ -27,7 +27,8 @@ class Encoding:
 
     """
 
-    def __init__(self):
+    def __init__(self, nperseg=128,noverlap=32, min_distance=50, \
+                 time_window=1., freq_window=1500):
 
         """
         Class constructor
@@ -45,9 +46,12 @@ class Encoding:
 
         All these parameters should be kept as attributes of the class.
         """
-
-        # Insert code here
-
+        self.nperseg = nperseg
+        self.noverlap = noverlap
+        self.min_distance = min_distance
+        self.time_window = time_window
+        self.freq_window = freq_window
+        
 
     def process(self, fs, s):
 
@@ -86,10 +90,18 @@ class Encoding:
         self.fs = fs
         self.s = s
 
-        # Insert code here
+        f, t, Sxx = spectrogram(s, fs, nperseg=self.nperseg, \
+                                noverlap=self.noverlap,)
+        self.S = Sxx
+        self.f = f
+        self.t = t
 
+        coords = peak_local_max(Sxx, min_distance=self.min_distance, exclude_border=False,\
+                       num_peaks = 50)
+        self.anchors = coords
 
-    def display_spectrogram(self):
+        
+    def display_spectrogram(self, display_anchors=False):
 
         """
         Display the spectrogram of the audio signal
@@ -101,7 +113,8 @@ class Encoding:
            spectrogram
         """
 
-        plt.pcolormesh(self.t, self.f/1e3, self.S, shading='gouraud')
+        # plt.pcolormesh(self.t, self.f/1e3, self.S, shading='gouraud')
+        plt.pcolormesh(self.t, self.f/1e3, self.S)
         plt.xlabel('Time [s]')
         plt.ylabel('Frequency [kHz]')
         if(display_anchors):
