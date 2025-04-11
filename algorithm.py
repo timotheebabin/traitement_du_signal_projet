@@ -16,110 +16,125 @@ from skimage.feature import peak_local_max
 
 class Encoding:
 
-    """
-    Class implementing the procedure for creating a fingerprint 
-    for the audio files
+   """
+   Class implementing the procedure for creating a fingerprint 
+   for the audio files
 
-    The fingerprint is created through the following steps
-    - compute the spectrogram of the audio signal
-    - extract local maxima of the spectrogram
-    - create hashes using these maxima
+   The fingerprint is created through the following steps
+   - compute the spectrogram of the audio signal
+   - extract local maxima of the spectrogram
+   - create hashes using these maxima
 
-    """
+   """
 
-    def __init__(self, nperseg=128,noverlap=32, min_distance=50, \
+   def __init__(self, nperseg=128,noverlap=32, min_distance=50, \
                  time_window=1., freq_window=1500):
 
-        """
-        Class constructor
+      """
+      Class constructor
 
-        To Do
-        -----
+      To Do
+      -----
 
-        Initialize in the constructor all the parameters required for
-        creating the signature of the audio files. These parameters include for
-        instance:
-        - the window selected for computing the spectrogram
-        - the size of the temporal window 
-        - the size of the overlap between subsequent windows
-        - etc.
+      Initialize in the constructor all the parameters required for
+      creating the signature of the audio files. These parameters include for
+      instance:
+      - the window selected for computing the spectrogram
+      - the size of the temporal window 
+      - the size of the overlap between subsequent windows
+      - etc.
 
-        All these parameters should be kept as attributes of the class.
-        """
-        self.nperseg = nperseg
-        self.noverlap = noverlap
-        self.min_distance = min_distance
-        self.time_window = time_window
-        self.freq_window = freq_window
+      All these parameters should be kept as attributes of the class.
+      """
+      self.nperseg = nperseg
+      self.noverlap = noverlap
+      self.min_distance = min_distance
+      self.time_window = time_window
+      self.freq_window = freq_window
         
 
-    def process(self, fs, s):
+   def process(self, fs, s):
 
-        """
+      """
 
-        To Do
-        -----
+      To Do
+      -----
 
-        This function takes as input a sampled signal s and the sampling
-        frequency fs and returns the fingerprint (the hashcodes) of the signal.
-        The fingerprint is created through the following steps
-        - spectrogram computation
-        - local maxima extraction
-        - hashes creation
+      This function takes as input a sampled signal s and the sampling
+      frequency fs and returns the fingerprint (the hashcodes) of the signal.
+      The fingerprint is created through the following steps
+      - spectrogram computation
+      - local maxima extraction
+      - hashes creation
 
-        Implement all these operations in this function. Keep as attributes of
-        the class the spectrogram, the range of frequencies, the anchors, the 
-        list of hashes, etc.
+      Implement all these operations in this function. Keep as attributes of
+      the class the spectrogram, the range of frequencies, the anchors, the 
+      list of hashes, etc.
 
-        Each hash can conveniently be represented by a Python dictionary 
-        containing the time associated to its anchor (key: "t") and a numpy 
-        array with the difference in time between the anchor and the target, 
-        the frequency of the anchor and the frequency of the target 
-        (key: "hash")
+      Each hash can conveniently be represented by a Python dictionary 
+      containing the time associated to its anchor (key: "t") and a numpy 
+      array with the difference in time between the anchor and the target, 
+      the frequency of the anchor and the frequency of the target 
+      (key: "hash")
 
 
-        Parameters
-        ----------
+      Parameters
+      ----------
 
-        fs: int
-           sampling frequency [Hz]
-        s: numpy array
-           sampled signal
-        """
+      fs: int
+         sampling frequency [Hz]
+      s: numpy array
+         sampled signal
+      """
 
-        self.fs = fs
-        self.s = s
+      self.fs = fs
+      self.s = s
 
-        f, t, Sxx = spectrogram(s, fs, nperseg=self.nperseg, \
-                                noverlap=self.noverlap,)
-        self.S = Sxx
-        self.f = f
-        self.t = t
+      f, t, Sxx = spectrogram(s, fs, nperseg=self.nperseg, \
+                              noverlap=self.noverlap)
 
-        coords = peak_local_max(Sxx, min_distance=self.min_distance, exclude_border=False,\
-                       num_peaks = 50)
-        self.anchors = coords
+      self.S = Sxx
+      self.f = f
+      self.t = t
+
+      coords = peak_local_max(Sxx, min_distance=self.min_distance, exclude_border=False)
+
+      constellation = np.array([(self.f[p[0]],self.t[p[1]]) for p in coords])
+      self.anchors = constellation
+
+      self.hashes = []
+      # Sort constellation along the time axis
+      constellation = constellation[np.argsort(constellation[:, 1])]
+      for a in range(len(constellation)):
+         for i in range(a+1, len(constellation)):
+            if constellation[a][1] - constellation[i][1] > self.time_window:
+                break
+            
+            if constellation[i][0] - constellation[a][0] < self.freq_window :
+               hashcode = np.array([constellation[i][1]-constellation[a][1],
+                                    constellation[a][0],constellation[i][0]])
+               self.hashes.append({'t' : constellation[a][1], 'hash' : hashcode})
 
         
-    def display_spectrogram(self, display_anchors=False):
+   def display_spectrogram(self, display_anchors=False):
 
-        """
-        Display the spectrogram of the audio signal
+      """
+      Display the spectrogram of the audio signal
 
-        Parameters
-        ----------
-        display_anchors: boolean
-           when set equal to True, the anchors are displayed on the
-           spectrogram
-        """
+      Parameters
+      ----------
+      display_anchors: boolean
+         when set equal to True, the anchors are displayed on the
+         spectrogram
+      """
 
-        # plt.pcolormesh(self.t, self.f/1e3, self.S, shading='gouraud')
-        plt.pcolormesh(self.t, self.f/1e3, self.S)
-        plt.xlabel('Time [s]')
-        plt.ylabel('Frequency [kHz]')
-        if(display_anchors):
-            plt.scatter(self.anchors[:, 0], self.anchors[:, 1]/1e3)
-        plt.show()
+      #   plt.pcolormesh(self.t, self.f/1e3, self.S, shading='gouraud')
+      plt.pcolormesh(self.t, self.f/1e3, self.S)
+      plt.xlabel('Time [s]')
+      plt.ylabel('Frequency [kHz]')
+      if(display_anchors):
+         plt.scatter(self.anchors[:, 1], self.anchors[:, 0]/1e3)
+      plt.show()
 
 
 

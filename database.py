@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # 2: Set the parameters of the encoder
     nperseg=128
     noverlap=32
-    min_distance=50
+    min_distance=4*50
     time_window=1.
     freq_window=1500
     encoder = Encoding(nperseg=nperseg, noverlap=noverlap, 
@@ -45,10 +45,9 @@ if __name__ == '__main__':
         print('Song: ' + audiofile[:-4])
         print('Sampling frequency: ' + str(fs))
         encoder.process(fs, s)
-        print(len(encoder.t))
         encoder.display_spectrogram(display_anchors=True)
-        #database.append({'song': audiofile[:-4],
-        #  'hashcodes': encoder.hashes})
+        database.append({'song': audiofile[:-4],
+         'hashcodes': encoder.hashes})
 
     # 4: Save the database
     with open('songs.pickle', 'wb') as handle:
