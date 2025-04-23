@@ -42,8 +42,10 @@ if __name__ == '__main__':
     encoder.process(fs, s[tmin:tmin + duration])
     hashes = encoder.hashes
 
-    # 5: TODO: Using the class Matching, compare the fingerprint to all the 
-    # fingerprints in the database
+    for el in database:
+        matcher = Matching(el['hashcodes'], hashes)
+        print('Song: ' + el['song'] + ' - Number of matches: ' + str(len(matcher.matching)))
+        print(matcher.is_match)
 
 
 

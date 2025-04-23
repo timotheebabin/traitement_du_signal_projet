@@ -39,13 +39,12 @@ if __name__ == '__main__':
 
     # 3: Construct the database
     database = []
-    for audiofile in audiofiles[:1]:
+    for audiofile in audiofiles:
     
         fs, s = read(folder + '/' + audiofile)
         print('Song: ' + audiofile[:-4])
         print('Sampling frequency: ' + str(fs))
         encoder.process(fs, s)
-        encoder.display_spectrogram(display_anchors=True)
         database.append({'song': audiofile[:-4],
          'hashcodes': encoder.hashes})
 
